@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WiraGen | Generator Ide Usaha Pelajar</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --accent: #10b981;
+      --card: rgba(255, 255, 255, 0.85);
+      --text: #0f172a;
+      --text-light: #64748b;
+      --radius: 16px;
+      --shadow: 0 8px 30px rgba(0,0,0,0.08);
+      --glass: blur(12px) saturate(180%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    
+    body {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 50%, #ecfdf5 100%);
+      min-height: 100vh;
+      color: var(--text);
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    h1 { font-size: 2.2rem; background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-light); font-size: 1rem; }
+
+    .progress-track { display: flex; justify-content: space-between; margin-bottom: 2rem; position: relative; padding: 0 2rem; }
+    .progress-track::before { content: ''; position: absolute; top: 50%; left: 2rem; right: 2rem; height: 4px; background: #e2e8f0; transform: translateY(-50%); z-index: 0; border-radius: 4px; }
+    .progress-fill { position: absolute; top: 50%; left: 2rem; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); transform: translateY(-50%); z-index: 1; border-radius: 4px; transition: width 0.4s ease; width: 0%; }
+    .step-dot { width: 36px; height: 36px; border-radius: 50%; background: white; border: 3px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-light); z-index: 2; transition: all 0.3s ease; position: relative; }
+    .step-dot.active { border-color: var(--primary); background: var(--primary); color: white; transform: scale(1.1); }
+    .step-dot.completed { border-color: var(--accent); background: var(--accent); color: white; }
+
+    .step-container { background: var(--card); backdrop-filter: var(--glass); border: 1px solid rgba(255,255,255,0.6); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); transition: all 0.4s ease; min-height: 400px; position: relative; overflow: hidden; }
+    .step { display: none; animation: fadeSlide 0.5s ease forwards; }
+    .step.active { display: block; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-cat { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .cat-card { background: white; padding: 1.5rem; border-radius: 14px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .cat-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+    .cat-card.selected { border-color: var(--primary); background: #eef2ff; }
+    .cat-icon { font-size: 2.2rem; margin-bottom: 0.5rem; display: block; }
+    .cat-name { font-weight: 600; color: var(--text); }
+
+    .input-group { margin-bottom: 1.5rem; }
+    label { display: block; margin-bottom: 0.6rem; font-weight: 600; color: var(--text); }
+    select, input[type="range"] { width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid #cbd5e1; background: white; }
+    input[type="range"] { -webkit-appearance: none; height: 8px; background: #e2e8f0; border-radius: 4px; outline: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: var(--primary); border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(99,102,241,0.4); }
+    .range-labels { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-light); margin-top: 0.3rem; }
+
+    .time-options { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+    .time-btn { padding: 0.6rem 1.2rem; border-radius: 8px; border: 2px solid #e2e8f0; background: white; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .time-btn.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+
+    .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
+    .btn { flex: 1; padding: 0.9rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-next { background: var(--primary); color: white; }
+    .btn-next:hover { background: var(--primary-dark); transform: translateY(-2px); }
+    .btn-back { background: #f1f5f9; color: var(--text); }
+    .btn-back:hover { background: #e2e8f0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .loader { text-align: center; padding: 3rem 0; display: none; }
+    .loader.active { display: block; }
+    .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.5rem; display: none; }
+    .results-grid.active { display: grid; }
+
+    .idea-card { background: white; border-radius: 14px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; transition: all 0.2s; position: relative; }
+    .idea-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .match-badge { position: absolute; top: -10px; right: 15px; background: var(--accent); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+    .idea-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+    .idea-meta { font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.8rem; line-height: 1.5; }
+    .idea-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .btn-sm { padding: 0.5rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: none; background: #e0e7ff; color: var(--primary); }
+    .btn-sm:hover { background: #c7d2fe; }
+    .btn-sm.save.saved { background: var(--accent); color: white; }
+
+    .favorites-section { margin-top: 2rem; border-top: 2px dashed #cbd5e1; padding-top: 1.5rem; display: none; }
+    .favorites-section.active { display: block; }
+    .fav-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--text); }
+    .fav-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .fav-tag { background: #f8fafc; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; border: 1px solid #e2e8f0; cursor: pointer; }
+    .fav-tag:hover { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+
+    footer { text-align: center; margin-top: 3rem; color: var(--text-light); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WiraGen 🚀</h1>
+      <p class="subtitle">Generator Ide Usaha Pelajar PKWU yang Cerdas & Terstruktur</p>
+    </header>
+
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-dot" id="dot3">3</div>
+    </div>
+
+    <div class="step-container">
+      <!-- STEP 1 -->
+      <div class="step active" id="step1">
+        <h2>📌 Pilih Minat Usahamu</h2>
+        <p style="color:var(--text-light); margin-bottom:1rem;">Klik kategori yang paling kamu sukai</p>
+        <div class="grid-cat" id="category-grid">
+          <div class="cat-card" data-val="makanan"><span class="cat-icon">🍔</span><span class="cat-name">Makanan & Minuman</span></div>
+          <div class="cat-card" data-val="jasa"><span class="cat-icon">🛠️</span><span class="cat-name">Jasa & Servis</span></div>
+          <div class="cat-card" data-val="kerajinan"><span class="cat-icon">🎨</span><span class="cat-name">Kerajinan & Seni</span></div>
+          <div class="cat-card" data-val="digital"><span class="cat-icon">💻</span><span class="cat-name">Digital & Konten</span></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-next" id="btn1" disabled>Lanjutkan ➜</button></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step" id="step2">
+        <h2>💰 Tentukan Modal & Waktu</h2>
+        <p style="color:var(--text-light); margin-bottom:1.5rem;">Sesuaikan dengan kemampuanmu saat ini</p>
+        
+        <div class="input-group">
+          <label>Kisaran Modal (Rp)</label>
+          <input type="range" id="modal-range" min="0" max="1000000" step="50000" value="100000">
+          <div class="range-labels"><span>0</span><span id="modal-display">Rp 100.000</span><span>1.000.000</span></div>
+        </div>
+
+        <div class="input-group">
+          <label>Waktu Luang per Minggu</label>
+          <div class="time-options" id="time-options">
+            <div class="time-btn" data-val="rendah">&lt; 5 Jam</div>
+            <div class="time-btn" data-val="sedang">5 - 10 Jam</div>
+            <div class="time-btn" data-val="tinggi">&gt; 10 Jam</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-back" id="back2">← Kembali</button>
+          <button class="btn btn-next" id="btn2" disabled>Analisis Ide 🧠</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step" id="step3">
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <p>Menganalisis peluang terbaik untukmu...</p>
+        </div>
+        <div id="result-header" style="display:none; margin-bottom:1rem;">
+          <h2>✨ Rekomendasi yang Cocok!</h2>
+          <p style="color:var(--text-light);">Berdasarkan minat, modal, dan waktumu</p>
+        </div>
+        <div class="results-grid" id="results-grid"></div>
+        
+        <div class="favorites-section" id="fav-section">
+          <div class="fav-title">❤️ Ide Tersimpan:</div>
+          <div class="fav-list" id="fav-list"></div>
+        </div>
+
+        <div class="btn-row" style="margin-top:2rem;">
+          <button class="btn btn-back" id="back3">← Ulangi dari Awal</button>
+          <button class="btn btn-next" id="copy-all" style="display:none;">📋 Salin Semua Tips</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      &copy; 2026 WiraGen | Dibuat untuk Tugas PKWU Kelas XI
+    </footer>
+  </div>
+
+  <script>
+    // 📦 DATABASE IDE USAHA (28+ Ide PKWU Realistis)
+    const DB = [
+      // MAKANAN & MINUMAN
+      { cat:'makanan', nama:'Es Teh Jumbo Kekinian', modal:[0,150000], waktu:'rendah', bahan:'Teh, gula, cup plastik, es', tips:'Jual di depan sekolah jam pulang. Gunakan branding stiker custom.' },
+      { cat:'makanan', nama:'Singkong Keju Lumer', modal:[50000,200000], waktu:'sedang', bahan:'Singkong, keju, susu kental manis', tips:'Kemas dalam kotak kraft. Foto aesthetic untuk Instagram.' },
+      { cat:'makanan', nama:'Aneka Cilok/Bakso Bakar', modal:[200000,600000], waktu:'tinggi', bahan:'Tepung, bumbu kacang, tusuk sate', tips:'Buka lapak tetap di area kos/sekolah. Tawarkan paket hemat.' },
+      { cat:'makanan', nama:'Kopi Susu Gula Aren Literan', modal:[150000,400000], waktu:'sedang', bahan:'Kopi bubuk, susu UHT, gula aren, botol literan', tips:'Jual via pre-order di grup WA sekolah, fokus kemasan minimalis.' },
+      { cat:'makanan', nama:'Salad Buah Cup', modal:[50000,150000], waktu:'rendah', bahan:'Buah segar, mayones, yogurt, cup', tips:'Targetkan guru dan karyawan sekolah, jual sebelum jam masuk.' },
+      { cat:'makanan', nama:'Frozen Food Rumahan (Dimsum/Cireng)', modal:[100000,300000], waktu:'sedang', bahan:'Tepung, isian, kemasan ziplock', tips:'Produksi di weekend, jual via TikTok/IG, tawarkan reseller.' },
+      { cat:'makanan', nama:'Snack Box Event & Ulang Tahun', modal:[200000,600000], waktu:'tinggi', bahan:'Kue kecil, box custom, pita, nametag', tips:'Kerja sama dengan OSIS atau kelas untuk acara sekolah.' },
+      
+      // JASA & SERVIS
+      { cat:'jasa', nama:'Jastip (Jasa Titip) Sekolah', modal:[0,50000], waktu:'rendah', bahan:'HP, akun sosmed', tips:'Buat grup WA kelas. Kenakan fee Rp5k-10k per item.' },
+      { cat:'jasa', nama:'Shoe Cleaning Mini', modal:[50000,200000], waktu:'sedang', bahan:'Sikat, sabun khusus, lap microfiber', tips:'Ambil foto before-after. Tawarkan paket langganan bulanan.' },
+      { cat:'jasa', nama:'Jasa Foto Produk UMKM', modal:[0,200000], waktu:'sedang', bahan:'HP, backdrop kain putih, lighting alami', tips:'Tawarkan paket 5 foto/edit gratis dulu, portofolio di IG.' },
+      { cat:'jasa', nama:'Jasa Ketik & Format Makalah', modal:[0,50000], waktu:'rendah', bahan:'Laptop, Word/Canva', tips:'Targetkan siswa yang malas ngetik, harga per halaman atau paket lengkap.' },
+      { cat:'jasa', nama:'Les Privat/Tutor Sebaya', modal:[0,100000], waktu:'tinggi', bahan:'Materi pelajaran, papan tulis/Zoom', tips:'Fokus 1-2 mata pelajaran unggulan, sistem bagi hasil dengan orang tua.' },
+      { cat:'jasa', nama:'Jasa Jahit & Permak Sederhana', modal:[50000,300000], waktu:'tinggi', bahan:'Mesin jahit portable, benang, gunting', tips:'Targetkan teman yang celana/roknya kepanjangan, harga terjangkau.' },
+      
+      // KERAJINAN & SENI
+      { cat:'kerajinan', nama:'Gantungan Kunci Manik-Manik', modal:[20000,100000], waktu:'rendah', bahan:'Manik, senar, ring kunci', tips:'Ikut tren warna pastel. Jual di marketplace dengan keyword "estetic".' },
+      { cat:'kerajinan', nama:'Custom Tote Bag Lukis', modal:[100000,400000], waktu:'tinggi', bahan:'Kanvas polos, cat akrilik, kuas', tips:'Terima pesanan custom nama/gambar. Kolaborasi dengan klub sekolah.' },
+      { cat:'kerajinan', nama:'Custom Stiker & Label UMKM', modal:[100000,400000], waktu:'sedang', bahan:'Printer stiker, kertas vinyl, cutter', tips:'Tawarkan paket 50-100 pcs, fokus ke pelaku bisnis makanan lokal.' },
+      { cat:'kerajinan', nama:'Lilin Aromaterapi & Soy Wax', modal:[100000,350000], waktu:'tinggi', bahan:'Lilin soy wax, fragrance oil, toples kaca, sumbu', tips:'Jual sebagai kado ulang tahun atau souvenir acara sekolah.' },
+      { cat:'kerajinan', nama:'Custom Phone Case Resin Art', modal:[50000,200000], waktu:'tinggi', bahan:'Case polos, resin epoxy, cat akrilik', tips:'Ikuti tren karakter anime atau quote motivasi, jual via pre-order.' },
+      { cat:'kerajinan', nama:'Tanaman Hias dalam Pot Custom', modal:[150000,500000], waktu:'tinggi', bahan:'Pot tanah liat/plastik, tanah, bibit tanaman, cat', tips:'Targetkan penghobi tanaman atau kado wisuda, foto estetik untuk promosi.' },
+      
+      // DIGITAL & KONTEN
+      { cat:'digital', nama:'Jasa Desain Canva', modal:[0,100000], waktu:'sedang', bahan:'Akun Canva, laptop/HP', tips:'Tawarkan paket 5 poster/feeds. Gunakan portofolio Google Drive.' },
+      { cat:'digital', nama:'Admin Media Sosial UMKM', modal:[0,150000], waktu:'tinggi', bahan:'HP, kuota, tools scheduling', tips:'Approach UMKM lokal. Tawarkan free trial 3 hari pertama.' },
+      { cat:'digital', nama:'Dropshipper/Reseller Online', modal:[0,100000], waktu:'sedang', bahan:'HP, akun marketplace, katalog supplier', tips:'Pilih supplier terpercaya, fokus niche tertentu (aksesoris/fashion).' },
+      { cat:'digital', nama:'Jasa Edit Video TikTok/Reels', modal:[0,150000], waktu:'tinggi', bahan:'CapCut/Premiere, HP/Laptop', tips:'Tawarkan paket 3 video/minggu, gunakan template viral untuk kecepatan.' },
+      { cat:'digital', nama:'Blogger/Affiliate Marketing', modal:[0,200000], waktu:'tinggi', bahan:'Blog/Notion, akun affiliate (Shopee/Tokopedia)', tips:'Review produk pelajar, sisipkan link affiliate di konten.' },
+      { cat:'digital', nama:'Jasa Pembuatan CV & Portfolio Digital', modal:[0,100000], waktu:'sedang', bahan:'Canva/Notion, template profesional', tips:'Targetkan siswa kelas 12 yang mau magang/kuliah, tawarkan revisi 2x gratis.' }
+    ];
+
+    // STATE MANAGEMENT
+    let state = { step: 1, cat: null, modal: 100000, waktu: null };
+    
+    const els = {
+      steps: document.querySelectorAll('.step'),
+      dots: document.querySelectorAll('.step-dot'),
+      progress: document.getElementById('progress-fill'),
+      btn1: document.getElementById('btn1'), btn2: document.getElementById('btn2'),
+      back2: document.getElementById('back2'), back3: document.getElementById('back3'),
+      loader: document.getElementById('loader'), resHeader: document.getElementById('result-header'),
+      grid: document.getElementById('results-grid'), favSection: document.getElementById('fav-section'),
+      favList: document.getElementById('fav-list'), copyBtn: document.getElementById('copy-all')
+    };
+
+    // NAVIGATION LOGIC
+    function goTo(step) {
+      els.steps.forEach(s => s.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+      els.dots.forEach((d, i) => {
+        d.classList.remove('active', 'completed');
+        if (i + 1 < step) d.classList.add('completed');
+        if (i + 1 === step) d.classList.add('active');
+      });
+      els.progress.style.width = `${((step-1)/2)*100}%`;
+      state.step = step;
+    }
+
+    // STEP 1: CATEGORY SELECTION
+    document.querySelectorAll('.cat-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.cat = card.dataset.val;
+        els.btn1.disabled = false;
+      });
+    });
+    els.btn1.addEventListener('click', () => goTo(2));
+    els.back2.addEventListener('click', () => goTo(1));
+
+    // STEP 2: MODAL & TIME SELECTION
+    const modalRange = document.getElementById('modal-range');
+    const modalDisplay = document.getElementById('modal-display');
+    modalRange.addEventListener('input', () => {
+      state.modal = parseInt(modalRange.value);
+      modalDisplay.textContent = `Rp ${state.modal.toLocaleString('id-ID')}`;
+      checkStep2();
+    });
+
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.waktu = btn.dataset.val;
+        checkStep2();
+      });
+    });
+
+    function checkStep2() { els.btn2.disabled = !(state.waktu && state.cat); }
+    els.btn2.addEventListener('click', () => { goTo(3); processIdeas(); });
+
+    // CORE MATCHING ALGORITHM
+    function processIdeas() {
+      els.loader.classList.add('active');
+      els.resHeader.style.display = 'none';
+      els.grid.classList.remove('active');
+      els.copyBtn.style.display = 'none';
+
+      setTimeout(() => {
+        const filtered = DB.filter(i => i.cat === state.cat);
+        const scored = filtered.map(i => {
+          let match = 30; // base score
+          if (state.modal >= i.modal[0] && state.modal <= i.modal[1]) match += 40;
+          else if (state.modal > i.modal[1]) match += 20; // bisa skala kecil dulu
+          else match += 10;
+          
+          if (state.waktu === i.waktu) match += 20;
+          else if (state.waktu === 'tinggi' && i.waktu !== 'rendah') match += 15;
+          
+          return { ...i, match: Math.min(match, 98) };
+        }).sort((a,b) => b.match - a.match);
+
+        renderResults(scored.slice(0, 3));
+        els.loader.classList.remove('active');
+        els.resHeader.style.display = 'block';
+        els.grid.classList.add('active');
+        renderFavorites();
+        els.copyBtn.style.display = scored.length ? 'block' : 'none';
+      }, 1200);
+    }
+
+    function renderResults(list) {
+      els.grid.innerHTML = list.map(i => `
+        <div class="idea-card">
+          <div class="match-badge">Cocok ${i.match}%</div>
+          <div class="idea-title">${i.nama}</div>
+          <div class="idea-meta"><strong>🛒 Bahan/Modal:</strong> ${i.bahan}<br><strong>💡 Tips:</strong> ${i.tips}</div>
+          <div class="idea-actions">
+            <button class="btn-sm save" onclick="toggleSave(this, '${i.nama.replace(/'/g, "\\'")}')">❤️ Simpan</button>
+            <button class="btn-sm" onclick="navigator.clipboard.writeText('${i.tips.replace(/'/g, "\\'")}'); alert('✅ Tips disalin!')">📋 Copy</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // FAVORITES SYSTEM (localStorage)
+    function getFavs() { return JSON.parse(localStorage.getItem('wiragen_favs') || '[]'); }
+    function setFavs(arr) { localStorage.setItem('wiragen_favs', JSON.stringify(arr)); renderFavorites(); }
+
+    window.toggleSave = (btn, name) => {
+      let favs = getFavs();
+      if (favs.includes(name)) {
+        favs = favs.filter(n => n !== name);
+        btn.classList.remove('saved');
+        btn.textContent = '❤️ Simpan';
+      } else {
+        favs.push(name);
+        btn.classList.add('saved');
+        btn.textContent = '✅ Tersimpan';
+      }
+      setFavs(favs);
+    };
+
+    function renderFavorites() {
+      const favs = getFavs();
+      els.favSection.classList.toggle('active', favs.length > 0);
+      els.favList.innerHTML = favs.map(f => `<span class="fav-tag" onclick="if(confirm('Hapus ${f} dari favorit?')) { let f=getFavs(); setFavs(f.filter(x=>x!=='${f.replace(/'/g, "\\'")}')); }">${f} ✕</span>`).join('');
+    }
+
+    els.back3.addEventListener('click', () => {
+      document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+      state = { step: 1, cat: null, modal: 100000, waktu: null };
+      modalRange.value = 100000; modalDisplay.textContent = 'Rp 100.000';
+      els.btn1.disabled = true; els.btn2.disabled = true;
+      goTo(1);
+    });
+
+    els.copyBtn.addEventListener('click', () => {
+      const tips = Array.from(document.querySelectorAll('.idea-meta')).map(el => el.textContent).join('\n---\n');
+      navigator.clipboard.writeText(tips).then(() => alert('✅ Semua tips berhasil disalin ke clipboard!'));
+    });
+
+    // INIT
+    goTo(1);
+  </script>
+</body>
+</html>
